@@ -41,7 +41,9 @@ export default () => ({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
   },
   mail: {
-    host: process.env.MAIL_HOST || undefined, // blank => Ethereal test inbox
+    // Preferred on cloud hosts (Render blocks outbound SMTP ports): Brevo HTTP API.
+    brevoApiKey: process.env.BREVO_API_KEY || undefined,
+    host: process.env.MAIL_HOST || undefined, // blank => Ethereal test inbox (local)
     port: toInt(process.env.MAIL_PORT, 587),
     secure: toBool(process.env.MAIL_SECURE, false),
     user: process.env.MAIL_USER || undefined,

@@ -144,15 +144,23 @@ The app uses the AWS S3 SDK. **Option A (AWS S3)** is the original design.
 > Supabase to real AWS S3 later, blank `S3_ENDPOINT`, set `S3_FORCE_PATH_STYLE=false`,
 > and use your AWS keys/region.
 
-### 3.5 Email → SMTP creds
-**Option A — Brevo (recommended, 300 emails/day free, no card):**
-1. Sign up at **brevo.com**.
-2. **SMTP & API → SMTP** → copy **SMTP server** (`smtp-relay.brevo.com`), **port**
-   (`587`), **login**, and **generate an SMTP key** (the password).
-3. Verify a sender email under **Senders** (use your own email).
+### 3.5 Email → Brevo HTTP API key
+> ⚠️ **Render blocks outbound SMTP**, so SMTP email fails in production. Use Brevo's
+> **HTTP API** instead (the app auto-uses it when `BREVO_API_KEY` is set).
 
-**Option B — Gmail:** enable 2-Step Verification → create an **App Password** →
-use `smtp.gmail.com`, port `465`, secure `true`, your Gmail, the app password.
+1. Sign up at **brevo.com** (no card).
+2. **Senders, Domains & Dedicated IPs → Senders** → add & **verify** your sender email
+   (click the confirmation link). This becomes `MAIL_FROM`.
+3. **SMTP & API → API Keys** → **Generate a new API key** → copy it → this is
+   **`BREVO_API_KEY`**.
+4. Save:
+   ```
+   BREVO_API_KEY=<the API key>
+   MAIL_FROM=Product Processor <your-verified-sender-email>
+   ```
+
+*(SMTP still works for local dev where ports aren't blocked, but in the cloud always
+use `BREVO_API_KEY`.)*
 
 ---
 
@@ -183,12 +191,8 @@ use `smtp.gmail.com`, port `465`, secure `true`, your Gmail, the app password.
    | `S3_BUCKET` | `product-uploads` |
    | `AWS_ACCESS_KEY_ID` | *(Supabase, 3.4)* |
    | `AWS_SECRET_ACCESS_KEY` | *(Supabase, 3.4)* |
-   | `MAIL_HOST` | `smtp-relay.brevo.com` |
-   | `MAIL_PORT` | `587` |
-   | `MAIL_SECURE` | `false` |
-   | `MAIL_USER` | *(Brevo login)* |
-   | `MAIL_PASSWORD` | *(Brevo SMTP key)* |
-   | `MAIL_FROM` | `"Product Processor <your-verified-sender>"` |
+   | `BREVO_API_KEY` | *(Brevo → SMTP & API → API Keys, 3.5)* |
+   | `MAIL_FROM` | `Product Processor <your-verified-sender>` |
    | `FRONTEND_URL` | *(fill after step 5 — leave blank for now)* |
 
    > Do **not** set `PORT` — Render provides it automatically.
