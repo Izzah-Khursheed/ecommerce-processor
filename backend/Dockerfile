@@ -1,6 +1,11 @@
 # ---- Build stage ----
-FROM node:20-alpine AS builder
+# node:20-slim (Debian) instead of alpine: Prisma needs OpenSSL, which is
+# reliably available here. Alpine/musl causes "failed to detect libssl" errors.
+FROM node:20-slim AS builder
 WORKDIR /app
+
+# OpenSSL is required by Prisma's engines
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Install all deps (incl. dev) for building
 COPY package*.json ./
@@ -14,9 +19,12 @@ COPY src ./src
 RUN npm run build
 
 # ---- Runtime stage ----
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+
+# OpenSSL needed at runtime too (for `prisma migrate deploy` + query engine)
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Bring built output + deps (includes generated Prisma client and Prisma CLI
 # needed for `prisma migrate deploy` at startup)

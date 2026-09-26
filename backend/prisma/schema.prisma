@@ -2,7 +2,10 @@
 // After changing this file run:  npx prisma migrate dev --name <change>
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" = local dev (Windows). The debian target matches the Docker image
+  // (node:20-slim) used in production so the engine loads correctly.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
