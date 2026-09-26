@@ -14,5 +14,6 @@ export interface FileProcessedEvent {
   totalRows: number;
   successCount: number;
   failedCount: number;
+  duplicateCount: number;
   errorFileKey: string | null;
 }

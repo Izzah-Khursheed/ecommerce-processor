@@ -142,7 +142,7 @@ export function UploadPanel() {
             <span className={`pill ${batch.status}`}><span className="dot" /> {batch.status}</span>
           </div>
 
-          <div className="stats">
+          <div className="stats stats-4">
             <div className="stat total">
               <div className="num">{batch.totalRows}</div>
               <div className="lbl">Total rows</div>
@@ -155,9 +155,13 @@ export function UploadPanel() {
               <div className="num">{batch.failedCount}</div>
               <div className="lbl">Unsuccessful</div>
             </div>
+            <div className="stat warn">
+              <div className="num">{batch.duplicateCount}</div>
+              <div className="lbl">Duplicates</div>
+            </div>
           </div>
 
-          {batch.failedCount > 0 && batch.errorFileKey && (
+          {(batch.failedCount > 0 || batch.duplicateCount > 0) && batch.errorFileKey && (
             <a className="download-btn" href={api.errorFileUrl(batch.id)} target="_blank" rel="noreferrer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
@@ -165,8 +169,18 @@ export function UploadPanel() {
               Download error sheet
             </a>
           )}
-          {batch.failedCount === 0 && (
+          {batch.failedCount === 0 && batch.duplicateCount === 0 && (
             <p className="notice ok">🎉 Every row was valid and imported!</p>
+          )}
+          {batch.duplicateCount > 0 && (
+            <p className="notice">
+              <span>♻️</span>
+              <span>
+                <strong>{batch.duplicateCount}</strong> row(s) were skipped as
+                <strong> duplicates</strong> (the SKU already exists or repeats in the file) —
+                they’re not counted as successful.
+              </span>
+            </p>
           )}
 
           <p className="notice">

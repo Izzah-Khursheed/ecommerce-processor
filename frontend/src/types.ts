@@ -8,6 +8,7 @@ export interface UploadBatch {
   totalRows: number;
   successCount: number;
   failedCount: number;
+  duplicateCount: number;
   errorFileKey: string | null;
   errorMessage: string | null;
   createdAt: string;

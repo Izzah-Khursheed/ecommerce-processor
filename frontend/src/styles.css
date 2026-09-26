@@ -389,6 +389,7 @@ input[type='email']:focus {
 
 /* ---------- Stat cards ---------- */
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+.stats.stats-4 { grid-template-columns: repeat(4, 1fr); }
 .stat {
   position: relative;
   border-radius: var(--radius-sm);
@@ -404,9 +405,11 @@ input[type='email']:focus {
 .stat.total::before { background: var(--grad); }
 .stat.success::before { background: var(--ok); }
 .stat.danger::before { background: var(--bad); }
+.stat.warn::before { background: var(--warn-ink); }
 .stat .num { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
 .stat.success .num { color: var(--ok); }
 .stat.danger .num { color: var(--bad); }
+.stat.warn .num { color: var(--warn-ink); }
 .stat .lbl { color: var(--muted); font-size: 12.5px; margin-top: 4px; font-weight: 500; }
 
 /* ---------- Products grid ---------- */
@@ -481,6 +484,7 @@ code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-
   .container { padding: 20px 16px 56px; }
   .card { padding: 20px 16px; }
   .stats { grid-template-columns: 1fr; }
+  .stats.stats-4 { grid-template-columns: repeat(2, 1fr); }
   .products-grid { grid-template-columns: 1fr; }
   .brand-sub { display: none; }
   .segmented { width: 100%; }

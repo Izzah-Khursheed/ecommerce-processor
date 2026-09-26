@@ -5,7 +5,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Job } from 'bullmq';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { S3Service } from '../../infrastructure/storage/s3.service';
-import { ExcelService, FailedRow } from './excel.service';
+import { ExcelService, FailedRow, ParsedRow } from './excel.service';
 import { validateProductRow } from './dto/product-row.dto';
 import { EVENT_BUS, EVENTS, QUEUES } from '../../common/constants';
 import { emitEvent } from '../../common/utils/emit-event.util';
@@ -46,10 +46,11 @@ export class ProcessingProcessor extends WorkerHost {
       const buffer = await this.s3.getObject(fileKey);
       const rows = await this.excel.readRows(buffer);
 
-      // 2) Validate each row; also dedupe SKUs within the file.
+      // 2) Validate each row; separate format failures and in-file duplicates.
       const seenSkus = new Set<string>();
-      const failed: FailedRow[] = [];
-      const validRows: { sku: string; data: any }[] = [];
+      const failed: FailedRow[] = []; // missing / invalid data
+      const duplicates: FailedRow[] = []; // duplicate SKUs (in file or catalog)
+      const candidates: { sku: string; row: ParsedRow; data: any }[] = [];
 
       for (const row of rows) {
         const result = validateProductRow(row.raw);
@@ -59,12 +60,13 @@ export class ProcessingProcessor extends WorkerHost {
         }
         const dto = result.dto;
         if (seenSkus.has(dto.sku)) {
-          failed.push({ ...row, errors: ['duplicate sku within this file'] });
+          duplicates.push({ ...row, errors: ['duplicate sku within this file'] });
           continue;
         }
         seenSkus.add(dto.sku);
-        validRows.push({
+        candidates.push({
           sku: dto.sku,
+          row,
           data: {
             sku: dto.sku,
             name: dto.name,
@@ -78,32 +80,31 @@ export class ProcessingProcessor extends WorkerHost {
         });
       }
 
-      // 3) Reject SKUs that already exist in the catalog (excluding soft-deleted).
-      const skus = validRows.map((v) => v.sku);
+      // 3) A SKU already in the catalog is a duplicate. We check ALL rows
+      //    (including soft-deleted) because the unique constraint still applies.
+      const skus = candidates.map((c) => c.sku);
       const existing = skus.length
         ? await this.prisma.product.findMany({
-            where: { sku: { in: skus }, deletedAt: null },
+            where: { sku: { in: skus } },
             select: { sku: true },
           })
         : [];
       const existingSet = new Set(existing.map((e) => e.sku));
 
-      const toInsert = validRows.filter((v) => {
-        if (existingSet.has(v.sku)) return false;
-        return true;
-      });
-      for (const v of validRows) {
-        if (existingSet.has(v.sku)) {
-          const orig = rows.find((r) => String(r.raw.sku ?? '').trim() === v.sku)!;
-          failed.push({ ...orig, errors: ['sku already exists in catalog'] });
+      const toInsert: any[] = [];
+      for (const c of candidates) {
+        if (existingSet.has(c.sku)) {
+          duplicates.push({ ...c.row, errors: ['sku already exists in catalog'] });
+        } else {
+          toInsert.push(c.data);
         }
       }
 
-      // 4) Insert valid products in chunks (cheaper than row-by-row).
+      // 4) Insert the genuinely-new products in chunks.
       const chunkSize = this.config.get<number>('processing.dbChunkSize')!;
       let successCount = 0;
       for (let i = 0; i < toInsert.length; i += chunkSize) {
-        const chunk = toInsert.slice(i, i + chunkSize).map((v) => v.data);
+        const chunk = toInsert.slice(i, i + chunkSize);
         const res = await this.prisma.product.createMany({
           data: chunk,
           skipDuplicates: true,
@@ -111,10 +112,16 @@ export class ProcessingProcessor extends WorkerHost {
         successCount += res.count;
       }
 
-      // 5) Build the error sheet (only if there were failures).
+      const totalRows = rows.length;
+      const failedCount = failed.length;
+      const duplicateCount = duplicates.length;
+
+      // 5) Build the error sheet from every row that was NOT imported
+      //    (validation failures + duplicates), each with its reason.
+      const notImported = [...failed, ...duplicates];
       let errorFileKey: string | null = null;
-      if (failed.length > 0) {
-        const errorBuffer = await this.excel.buildErrorWorkbook(failed);
+      if (notImported.length > 0) {
+        const errorBuffer = await this.excel.buildErrorWorkbook(notImported);
         errorFileKey = `errors/${batchId}/unsuccessful-rows.xlsx`;
         await this.s3.putObject(
           errorFileKey,
@@ -122,9 +129,6 @@ export class ProcessingProcessor extends WorkerHost {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         );
       }
-
-      const totalRows = rows.length;
-      const failedCount = failed.length;
 
       // 6) Mark the batch complete.
       await this.prisma.uploadBatch.update({
@@ -134,12 +138,14 @@ export class ProcessingProcessor extends WorkerHost {
           totalRows,
           successCount,
           failedCount,
+          duplicateCount,
           errorFileKey,
         },
       });
 
       this.logger.log(
-        `Batch ${batchId} done: total=${totalRows} success=${successCount} failed=${failedCount}`,
+        `Batch ${batchId} done: total=${totalRows} success=${successCount} ` +
+          `failed=${failedCount} duplicates=${duplicateCount}`,
       );
 
       // 7) Announce completion -> the notification consumer will email the user.
@@ -150,6 +156,7 @@ export class ProcessingProcessor extends WorkerHost {
         totalRows,
         successCount,
         failedCount,
+        duplicateCount,
         errorFileKey,
       };
       await emitEvent(this.eventBus, EVENTS.FILE_PROCESSED, processed);

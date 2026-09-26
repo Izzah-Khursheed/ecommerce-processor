@@ -84,9 +84,9 @@ export function ProductsPanel() {
               </div>
               <div className="pc-actions">
                 <button className="btn btn-sm btn-danger" onClick={() => onDelete(p.id)}>
-                  Soft delete
+                  Delete
                 </button>
-                <button className="btn btn-sm btn-success" onClick={() => onRestore(p.id)} title="Undo a soft delete">
+                <button className="btn btn-sm btn-success" onClick={() => onRestore(p.id)} title="Restore a deleted product">
                   Restore
                 </button>
               </div>
@@ -94,14 +94,6 @@ export function ProductsPanel() {
           ))}
         </div>
       )}
-
-      <p className="notice">
-        <span>💡</span>
-        <span>
-          <strong>Soft delete</strong> hides a product (sets <code>deletedAt</code>) without
-          removing the row — click <strong>Restore</strong> to bring it back.
-        </span>
-      </p>
     </div>
   );
 }

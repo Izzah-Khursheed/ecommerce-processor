@@ -58,7 +58,8 @@ model UploadBatch {
 
   totalRows      Int @default(0)
   successCount   Int @default(0)
-  failedCount    Int @default(0)
+  failedCount    Int @default(0) // rows with missing/invalid data
+  duplicateCount Int @default(0) // rows skipped because the SKU already exists
 
   errorFileKey String? // S3 key of the generated "unsuccessful rows" Excel
   errorMessage String? // set if the whole job failed

@@ -12,8 +12,8 @@ const REQUIRED_FORMAT_ROWS: Array<[string, string]> = [
 ];
 
 export function buildResultEmail(data: FileProcessedEvent): string {
-  const { fileName, totalRows, successCount, failedCount } = data;
-  const hasFailures = failedCount > 0;
+  const { fileName, totalRows, successCount, failedCount, duplicateCount } = data;
+  const notImported = failedCount + duplicateCount;
 
   const formatRows = REQUIRED_FORMAT_ROWS.map(
     ([col, rule]) =>
@@ -36,15 +36,20 @@ export function buildResultEmail(data: FileProcessedEvent): string {
         <td style="padding:8px 14px;border:1px solid #dfe3ea;color:#1a7f37;"><strong>${successCount}</strong></td>
       </tr>
       <tr>
-        <td style="padding:8px 14px;border:1px solid #dfe3ea;background:#f7f9fc;">❌ Unsuccessful</td>
+        <td style="padding:8px 14px;border:1px solid #dfe3ea;background:#f7f9fc;">❌ Unsuccessful (invalid data)</td>
         <td style="padding:8px 14px;border:1px solid #dfe3ea;color:#b42318;"><strong>${failedCount}</strong></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 14px;border:1px solid #dfe3ea;background:#f7f9fc;">♻️ Duplicates (SKU already exists)</td>
+        <td style="padding:8px 14px;border:1px solid #dfe3ea;color:#9a6b00;"><strong>${duplicateCount}</strong></td>
       </tr>
     </table>
 
     ${
-      hasFailures
-        ? `<p>We’ve attached an Excel file (<strong>unsuccessful-rows.xlsx</strong>) containing only the
-             rows that failed, each with an <code>errors</code> column explaining what to fix.</p>`
+      notImported > 0
+        ? `<p>We’ve attached an Excel file (<strong>unsuccessful-rows.xlsx</strong>) containing every row
+             that was <strong>not imported</strong> (invalid data and duplicates), each with an
+             <code>errors</code> column explaining why.</p>`
         : `<p style="color:#1a7f37;">🎉 Every row was valid and imported successfully. Nothing to fix!</p>`
     }
 
