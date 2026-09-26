@@ -1,0 +1,38 @@
+# dependencies (anywhere in the monorepo)
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# env & secrets (keep the *.example templates)
+.env
+.env.local
+.env.*.local
+**/.env
+!**/.env.example
+!**/.env.production.example
+
+# prisma local dev db
+**/prisma/migrations/dev.db*
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# generated / temp
+tmp/
+uploads/
+*.tmp
+
+# local tooling
+.claude/settings.local.json

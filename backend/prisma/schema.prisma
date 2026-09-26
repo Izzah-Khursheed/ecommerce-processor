@@ -1,0 +1,70 @@
+// Prisma schema — see https://pris.ly/d/prisma-schema
+// After changing this file run:  npx prisma migrate dev --name <change>
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// One product = one row from the uploaded Excel sheet.
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique // the "unique number" — one product per SKU
+  name        String
+  description String
+  price       Decimal  @db.Decimal(12, 2)
+  category    String
+  color       String
+  stock       Int // inventory stock
+
+  // Soft delete: instead of physically removing a row, we set deletedAt.
+  // Queries filter out rows where deletedAt is not null. See ProcessorGuide C8/C9.
+  deletedAt DateTime?
+
+  // Which upload created this product (nullable for manually-added products).
+  batchId String?
+  batch   UploadBatch? @relation(fields: [batchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([deletedAt]) // makes "exclude soft-deleted" filtering cheap
+  @@map("products")
+}
+
+enum BatchStatus {
+  PENDING // file stored, waiting to be picked up
+  PROCESSING // worker is reading/validating rows
+  COMPLETED // finished; email sent
+  FAILED // job failed after all retries
+}
+
+/// One UploadBatch = one uploaded Excel file and its processing result.
+model UploadBatch {
+  id        String @id @default(uuid())
+  fileKey   String // the object key in S3/MinIO
+  fileName  String // original filename from the client
+  userEmail String // where to send the result
+
+  status BatchStatus @default(PENDING)
+
+  totalRows      Int @default(0)
+  successCount   Int @default(0)
+  failedCount    Int @default(0)
+
+  errorFileKey String? // S3 key of the generated "unsuccessful rows" Excel
+  errorMessage String? // set if the whole job failed
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@map("upload_batches")
+}
