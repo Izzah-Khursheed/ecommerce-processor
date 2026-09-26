@@ -24,6 +24,22 @@ export class ProductService {
     return { total, items };
   }
 
+  /** List soft-deleted products only (for the "Deleted products" section). */
+  async findDeleted(params: { skip?: number; take?: number }) {
+    const { skip = 0, take = 50 } = params;
+    const where = { deletedAt: { not: null } };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take: Math.min(take, 200),
+        orderBy: { updatedAt: 'desc' },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+    return { total, items };
+  }
+
   async findOne(id: string) {
     const product = await this.prisma.product.findFirst({
       where: { id, deletedAt: null },

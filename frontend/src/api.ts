@@ -36,6 +36,10 @@ export const api = {
     return json(await fetch(`${API_BASE}/products?${qs.toString()}`));
   },
 
+  async getDeletedProducts(): Promise<ProductList> {
+    return json(await fetch(`${API_BASE}/products/deleted`));
+  },
+
   async deleteProduct(id: string): Promise<Product> {
     return json(await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' }));
   },

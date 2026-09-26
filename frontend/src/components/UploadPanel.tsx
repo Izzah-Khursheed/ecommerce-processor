@@ -3,7 +3,7 @@ import { api } from '../api';
 import type { UploadBatch } from '../types';
 
 export function UploadPanel() {
-  const [email, setEmail] = useState('you@example.com');
+  const [email, setEmail] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>('');
@@ -63,9 +63,6 @@ export function UploadPanel() {
     <>
       <div className="card">
         <h2>Upload an Excel file</h2>
-        <p className="card-hint">
-          One product per row with a header row. Try <code>backend/samples/mixed.xlsx</code>.
-        </p>
 
         <div
           className={`dropzone${dragging ? ' dragging' : ''}`}
@@ -107,7 +104,7 @@ export function UploadPanel() {
           <input
             id="email"
             type="email"
-            placeholder="you@example.com"
+            placeholder="Enter Your Gmail Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -170,24 +167,21 @@ export function UploadPanel() {
             </a>
           )}
           {batch.failedCount === 0 && batch.duplicateCount === 0 && (
-            <p className="notice ok">🎉 Every row was valid and imported!</p>
+            <p className="notice ok">Every row was valid and imported.</p>
           )}
           {batch.duplicateCount > 0 && (
             <p className="notice">
-              <span>♻️</span>
               <span>
-                <strong>{batch.duplicateCount}</strong> row(s) were skipped as
-                <strong> duplicates</strong> (the SKU already exists or repeats in the file) —
-                they’re not counted as successful.
+                {batch.duplicateCount} row(s) were skipped as duplicates (the SKU already
+                exists or repeats in the file), they're not counted as successful.
               </span>
             </p>
           )}
 
           <p className="notice">
-            <span>📧</span>
             <span>
-              A result email was sent — its preview link is printed in the backend logs
-              (Ethereal in dev). See created products in the <strong>Products</strong> tab.
+              Get Result on Gmail · check your inbox and spam for the summary and error sheet.
+              See created products in the <strong>Products</strong> tab.
             </span>
           </p>
         </div>

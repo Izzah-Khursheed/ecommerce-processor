@@ -439,6 +439,8 @@ input[type='email']:focus {
   transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .product-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--border-strong); }
+.product-card.is-deleted { opacity: 0.7; border-style: dashed; }
+.product-card.is-deleted .pc-name { text-decoration: line-through; text-decoration-color: var(--faint); }
 .pc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .pc-name { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
 .pc-price { font-weight: 800; font-size: 16px; color: var(--violet-strong); white-space: nowrap; }
