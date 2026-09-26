@@ -103,10 +103,14 @@ Do these first; you'll paste the values into Render/Vercel in steps 4–5.
    `amqps://user:pass@xxx.rmq.cloudamqp.com/vhost`
    → this is your **`RABBITMQ_URL`**.
 
-### 3.4 Object storage → S3 vars  (choose ONE)
+### 3.4 Object storage → S3 vars
 
-The app uses the AWS S3 SDK. **Option A (AWS S3)** is the original, intended design.
-**Option B (Supabase)** is a drop-in, no-credit-card alternative — same code.
+> ✅ **This project uses Supabase Storage (Option B)** — instructor-approved, no credit
+> card, and it speaks the same S3 API so the code is unchanged. Follow **Option B**.
+> (Option A / real AWS S3 is kept for reference; switching is an env-only change.)
+
+The app uses the AWS S3 SDK. **Option A (AWS S3)** is the original design.
+**Option B (Supabase)** is a drop-in, no-credit-card option — same code.
 
 #### Option A — AWS S3 (the original design; needs a credit card to sign up)
 1. Create an **AWS account** at **aws.amazon.com** (requires a card; the free tier
